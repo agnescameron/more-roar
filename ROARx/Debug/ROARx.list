@@ -27,25 +27,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000028  00000000  00000000  0000781c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000c5d9  00000000  00000000  00007844  2**0
+ 12 .debug_info   0000c5ca  00000000  00000000  00007844  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00001fc4  00000000  00000000  00013e1d  2**0
+ 13 .debug_abbrev 00001fc4  00000000  00000000  00013e0e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00000da0  00000000  00000000  00015de8  2**3
+ 14 .debug_aranges 00000da0  00000000  00000000  00015dd8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00000a90  00000000  00000000  00016b88  2**0
+ 15 .debug_rnglists 00000a90  00000000  00000000  00016b78  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  00017053  00000000  00000000  00017618  2**0
+ 16 .debug_macro  00017053  00000000  00000000  00017608  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000ec4d  00000000  00000000  0002e66b  2**0
+ 17 .debug_line   0000ec50  00000000  00000000  0002e65b  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    00097462  00000000  00000000  0003d2b8  2**0
+ 18 .debug_str    0009745d  00000000  00000000  0003d2ab  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000d471a  2**0
+ 19 .comment      00000043  00000000  00000000  000d4708  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000032a0  00000000  00000000  000d4760  2**2
+ 20 .debug_frame  000032a0  00000000  00000000  000d474c  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000075  00000000  00000000  000d7a00  2**0
+ 21 .debug_line_str 00000075  00000000  00000000  000d79ec  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1402,7 +1402,7 @@ int main(void) {
  8000b0c:	af00      	add	r7, sp, #0
  8000b0e:	2328      	movs	r3, #40	@ 0x28
  8000b10:	18fb      	adds	r3, r7, r3
- 8000b12:	603b      	str	r3, [r7, #0]
+ 8000b12:	607b      	str	r3, [r7, #4]
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -1510,14 +1510,14 @@ int main(void) {
 	uint32_t ctr = 0;
  8000ba8:	2300      	movs	r3, #0
  8000baa:	61fb      	str	r3, [r7, #28]
-	uint32_t ctr2 = 0;
+	uint32_t phase = 0;
  8000bac:	2300      	movs	r3, #0
  8000bae:	61bb      	str	r3, [r7, #24]
-
-	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 
+
+		//array of adc values
 	    for(i=0; i<2; i++)
  8000bb0:	4b3d      	ldr	r3, [pc, #244]	@ (8000ca8 <main+0x1a0>)
  8000bb2:	2200      	movs	r2, #0
@@ -1574,48 +1574,46 @@ int main(void) {
 	    }
 
 
-	    uint32_t ctr_scale = map_counter_scale(AD_RES[1]);
+	    uint32_t ctr_scale = map_counter_scale(AD_RES[1]); //1300 and 2700
  8000c12:	4b28      	ldr	r3, [pc, #160]	@ (8000cb4 <main+0x1ac>)
  8000c14:	885b      	ldrh	r3, [r3, #2]
  8000c16:	001a      	movs	r2, r3
- 8000c18:	003b      	movs	r3, r7
+ 8000c18:	1d3b      	adds	r3, r7, #4
  8000c1a:	469c      	mov	ip, r3
  8000c1c:	0010      	movs	r0, r2
  8000c1e:	f000 f84d 	bl	8000cbc <map_counter_scale.0>
  8000c22:	0003      	movs	r3, r0
- 8000c24:	617b      	str	r3, [r7, #20]
-		uint32_t phase = ctr2; // how does the scaling work?
- 8000c26:	69bb      	ldr	r3, [r7, #24]
- 8000c28:	613b      	str	r3, [r7, #16]
-		uint32_t sine_lookup = saw_xmax[phase%NS];
- 8000c2a:	693b      	ldr	r3, [r7, #16]
- 8000c2c:	22ff      	movs	r2, #255	@ 0xff
- 8000c2e:	401a      	ands	r2, r3
- 8000c30:	4b21      	ldr	r3, [pc, #132]	@ (8000cb8 <main+0x1b0>)
- 8000c32:	0092      	lsls	r2, r2, #2
- 8000c34:	58d3      	ldr	r3, [r2, r3]
- 8000c36:	60fb      	str	r3, [r7, #12]
+ 8000c24:	613b      	str	r3, [r7, #16]
+		uint32_t sine_lookup = saw_xmax[phase];
+ 8000c26:	4b24      	ldr	r3, [pc, #144]	@ (8000cb8 <main+0x1b0>)
+ 8000c28:	69ba      	ldr	r2, [r7, #24]
+ 8000c2a:	0092      	lsls	r2, r2, #2
+ 8000c2c:	58d3      	ldr	r3, [r2, r3]
+ 8000c2e:	60fb      	str	r3, [r7, #12]
 		uint32_t ad0_bitshift = AD_RES[0]>>3;
- 8000c38:	4b1e      	ldr	r3, [pc, #120]	@ (8000cb4 <main+0x1ac>)
- 8000c3a:	881b      	ldrh	r3, [r3, #0]
- 8000c3c:	08db      	lsrs	r3, r3, #3
- 8000c3e:	b29b      	uxth	r3, r3
- 8000c40:	60bb      	str	r3, [r7, #8]
+ 8000c30:	4b20      	ldr	r3, [pc, #128]	@ (8000cb4 <main+0x1ac>)
+ 8000c32:	881b      	ldrh	r3, [r3, #0]
+ 8000c34:	08db      	lsrs	r3, r3, #3
+ 8000c36:	b29b      	uxth	r3, r3
+ 8000c38:	60bb      	str	r3, [r7, #8]
 
-		uint32_t freq = ad0_bitshift + (sine_lookup-128)*2;
- 8000c42:	68fb      	ldr	r3, [r7, #12]
- 8000c44:	3b80      	subs	r3, #128	@ 0x80
- 8000c46:	005b      	lsls	r3, r3, #1
- 8000c48:	68ba      	ldr	r2, [r7, #8]
- 8000c4a:	18d3      	adds	r3, r2, r3
- 8000c4c:	607b      	str	r3, [r7, #4]
-		if (freq < 0) freq = 0;
+		uint32_t freq = ad0_bitshift + (sine_lookup)*2;
+ 8000c3a:	68fb      	ldr	r3, [r7, #12]
+ 8000c3c:	005b      	lsls	r3, r3, #1
+ 8000c3e:	68ba      	ldr	r2, [r7, #8]
+ 8000c40:	18d3      	adds	r3, r2, r3
+ 8000c42:	617b      	str	r3, [r7, #20]
+		if (freq <= 0) freq = 1;
+ 8000c44:	697b      	ldr	r3, [r7, #20]
+ 8000c46:	2b00      	cmp	r3, #0
+ 8000c48:	d101      	bne.n	8000c4e <main+0x146>
+ 8000c4a:	2301      	movs	r3, #1
+ 8000c4c:	617b      	str	r3, [r7, #20]
 		TIM2 -> ARR = freq;
  8000c4e:	2380      	movs	r3, #128	@ 0x80
  8000c50:	05db      	lsls	r3, r3, #23
- 8000c52:	687a      	ldr	r2, [r7, #4]
+ 8000c52:	697a      	ldr	r2, [r7, #20]
  8000c54:	62da      	str	r2, [r3, #44]	@ 0x2c
-
 
 		ctr += 1;
  8000c56:	69fb      	ldr	r3, [r7, #28]
@@ -1623,25 +1621,25 @@ int main(void) {
  8000c5a:	61fb      	str	r3, [r7, #28]
 		if(ctr%ctr_scale == 0){
  8000c5c:	69fb      	ldr	r3, [r7, #28]
- 8000c5e:	6979      	ldr	r1, [r7, #20]
+ 8000c5e:	6939      	ldr	r1, [r7, #16]
  8000c60:	0018      	movs	r0, r3
  8000c62:	f7ff fad5 	bl	8000210 <__aeabi_uidivmod>
  8000c66:	1e0b      	subs	r3, r1, #0
  8000c68:	d102      	bne.n	8000c70 <main+0x168>
-			ctr2 +=1;
+			phase +=1;
  8000c6a:	69bb      	ldr	r3, [r7, #24]
  8000c6c:	3301      	adds	r3, #1
  8000c6e:	61bb      	str	r3, [r7, #24]
 		}
 
-		ctr2 = ctr2%128;
+		phase = phase%NS;
  8000c70:	69bb      	ldr	r3, [r7, #24]
- 8000c72:	227f      	movs	r2, #127	@ 0x7f
+ 8000c72:	22ff      	movs	r2, #255	@ 0xff
  8000c74:	4013      	ands	r3, r2
  8000c76:	61bb      	str	r3, [r7, #24]
-		ctr = ctr%128;
+		ctr = ctr%NS;
  8000c78:	69fb      	ldr	r3, [r7, #28]
- 8000c7a:	227f      	movs	r2, #127	@ 0x7f
+ 8000c7a:	22ff      	movs	r2, #255	@ 0xff
  8000c7c:	4013      	ands	r3, r2
  8000c7e:	61fb      	str	r3, [r7, #28]
 	while (1) {

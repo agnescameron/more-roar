@@ -77,7 +77,7 @@ uint32_t triangle[NS] = { 120, 121, 123, 125, 127, 129, 131, 133, 134, 136, 138,
 		102, 103, 105, 107, 109, 111, 113, 115, 117, 118 };
 
 // saw_xmax wave tilted 0.96 - 8 bit resolution scaled to 94% max val
-uint32_t saw_xmax[NS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14,
+uint32_t saw_xmax[NS] = { 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14,
 		15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
 		33, 34, 35, 36, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
 		50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 61, 62, 63, 64, 65, 66,
@@ -93,7 +93,7 @@ uint32_t saw_xmax[NS] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 14,
 		195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 206, 207,
 		208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221,
 		222, 223, 224, 225, 226, 227, 228, 229, 230, 230, 231, 232, 233, 234,
-		235, 236, 237, 238, 239, 235, 188, 141, 94, 47, 0 };
+		235, 236, 237, 238, 239, 235, 188, 141, 94, 47, 1 };
 
 // weierstrass cosine wave 8 bit resolution scaled to 94% max val
 uint32_t weierstrass[NS] = { 236, 234, 229, 223, 217, 213, 212, 213, 216, 217,
@@ -248,13 +248,15 @@ int main(void) {
 
 
 	uint32_t ctr = 0;
-	uint32_t ctr2 = 0;
+	uint32_t phase = 0;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 
+
+		//array of adc values
 	    for(i=0; i<2; i++)
 	    {
 	        ADC_CH_Cfg.Channel = ADC_Channels[i];         // Select The ADC Channel [i]
@@ -265,24 +267,24 @@ int main(void) {
 	    }
 
 
-	    uint32_t ctr_scale = map_counter_scale(AD_RES[1]);
-		uint32_t phase = ctr2; // how does the scaling work?
-		uint32_t sine_lookup = saw_xmax[phase%NS];
+	    uint32_t ctr_scale = map_counter_scale(AD_RES[1]); //1300 and 2700
+		uint32_t sine_lookup = saw_xmax[phase];
 		uint32_t ad0_bitshift = AD_RES[0]>>3;
 
-		uint32_t freq = ad0_bitshift + (sine_lookup-128)*2;
-		if (freq < 0) freq = 0;
+		uint32_t freq = ad0_bitshift + (sine_lookup)*2;
+		if (freq <= 0) freq = 1;
 		TIM2 -> ARR = freq;
-
 
 		ctr += 1;
 		if(ctr%ctr_scale == 0){
-			ctr2 +=1;
+			phase +=1;
 		}
 
-		ctr2 = ctr2%128;
-		ctr = ctr%128;
+		phase = phase%NS;
+		ctr = ctr%NS;
 	}
+
+
 	/* USER CODE END 3 */
 }
 
