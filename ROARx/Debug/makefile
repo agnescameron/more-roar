@@ -60,8 +60,8 @@ all: main-build
 main-build: ROARx.elf secondary-outputs
 
 # Tool invocations
-ROARx.elf ROARx.map: $(OBJS) $(USER_OBJS) /Users/acameron/Documents/teaching/music/more\ roar/orig_roar/STM32G031J6MX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ROARx.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"/Users/acameron/Documents/teaching/music/more roar/orig_roar/STM32G031J6MX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ROARx.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ROARx.elf ROARx.map: $(OBJS) $(USER_OBJS) /Users/acameron/Documents/teaching/music/more\ roar/more-roar-git/ROARx/STM32G031J6MX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ROARx.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"/Users/acameron/Documents/teaching/music/more roar/more-roar-git/ROARx/STM32G031J6MX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ROARx.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

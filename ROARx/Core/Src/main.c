@@ -132,7 +132,9 @@ DMA_HandleTypeDef hdma_adc1;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 DMA_HandleTypeDef hdma_tim2_ch1;
+DMA_HandleTypeDef hdma_tim2_ch2;
 
 /* USER CODE BEGIN PV */
 uint8_t ctr = 1;
@@ -145,6 +147,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -215,21 +218,26 @@ int main(void) {
 	MX_DMA_Init();
 	MX_TIM1_Init();
 	MX_TIM2_Init();
+	MX_TIM3_Init();
 	MX_ADC1_Init();
 	/* USER CODE BEGIN 2 */
 
 ////PWM test
 //	TIM1->CCR1 = 128;
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 	HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_2);
 	HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t) sine, DstAddress, NS);
 	__HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC1);
+	__HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC2); //??
 	// Calibrate The ADC On Power-Up For Better Accuracy
 //	HAL_ADCEx_Calibration_Start(&hadc1);
 
 	ADC_CH_Cfg.Rank =  ADC_REGULAR_RANK_1;
 	ADC_CH_Cfg.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-
+	DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
+	DMA1_Channel3->CMAR = (uint32_t) sine; // SrcAddress
 
 	/* USER CODE END 2 */
 
@@ -248,79 +256,15 @@ int main(void) {
 
 		// sine
 		if (ctr == 1) {
-			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-			TIM2->ARR = ( ( AD_RES[1] >> 1) + (AD_RES[0] >> 4)); // ADC
+			TIM2->ARR = ( ( AD_RES[1] >> 2) + (AD_RES[0] >> 4)); // ADC
 		}
 
+		uint32_t phase = (AD_RES[1])%NS; // how does the scaling work?
+		uint32_t sine_lookup = sine[phase];
 
-		// AD_RES[0] >> 3
-		// AD_RES[1]
+		uint32_t freq = AD_RES[0] + sine_lookup;
+		TIM2 -> ARR = freq;
 
-//		// triangle
-//		if (ctr == 2) {
-//			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-//			TIM2->ARR = (AD_RES[1] >> 4); // ADC
-//		}
-//
-//
-//		if (ctr == 3) {
-//			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-//			TIM2->ARR = ((AD_RES[1] >> 3) * (AD_RES[0] >> 3) >> 3); // ADC
-//		}
-//
-//		if (ctr == 4) {
-//			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-//			TIM2->ARR = (AD_RES[1] >> 2) + (AD_RES[0] >> 3); // ADC
-//		}
-//
-//		if (ctr == 5) {
-//			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-//			TIM2->ARR = (AD_RES[1] >> 3) + (AD_RES[0] >> 2) + 4; // ADC
-//		}
-
-//		// saw_xmax
-//		if (ctr == 3) {
-//			DMA1_Channel1->CMAR = (uint32_t) saw_xmax; // SrcAddress
-//			TIM2->ARR = (AD_RES >> 3) + 10; // ADC
-//		}
-//
-//		// weierstrass
-//		if (ctr == 4) {
-//			DMA1_Channel1->CMAR = (uint32_t) weierstrass; // SrcAddress
-//			TIM2->ARR = (AD_RES >> 3) + 10; // ADC
-//		}
-//
-////		// noise
-////		if (ctr == 5) {
-////			noise_func(noise, NS, 240);
-////			DMA1_Channel1->CMAR = (uint32_t) noise; // SrcAddress
-////			TIM2->ARR = (AD_RES >> 3) + 10; // ADC
-////		}
-//
-//		// more noise
-//		if (ctr == 5) {
-//			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-//			TIM2->ARR = (AD_RES >> 3) + 10; // ADC
-//			AD_RES = AD_RES * rand () % 23 + 1; // Counter Period (ARR) random length
-//		}
-//
-//		// God awful noise
-//		if (ctr == 6) {
-//			DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-//			TIM2->ARR = (AD_RES << 1) + 10; // ADC
-//			AD_RES = AD_RES * rand() % 2;
-//		}
-
-// ADC DMA
-// Pass (ADC handle, Destination Buffer address, Number of data to ADC peripheral to memory)
-//		HAL_ADC_Start_DMA(&hadc1, &AD_RES, 1);
-
-//		// See Map function
-//		TIM2->ARR = MAP(AD_RES, 0, 8191, 5, 3500);
-
-		/* USER CODE END WHILE */
-
-		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
 }
@@ -506,6 +450,79 @@ static void MX_TIM1_Init(void) {
 
 	/* USER CODE END TIM1_Init 2 */
 	HAL_TIM_MspPostInit(&htim1);
+
+}
+
+static void MX_TIM3_Init(void) {
+
+	/* USER CODE BEGIN TIM1_Init 0 */
+
+	/* USER CODE END TIM1_Init 0 */
+
+	TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
+	TIM_MasterConfigTypeDef sMasterConfig = { 0 };
+	TIM_OC_InitTypeDef sConfigOC = { 0 };
+	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = { 0 };
+
+	/* USER CODE BEGIN TIM1_Init 1 */
+
+	/* USER CODE END TIM1_Init 1 */
+	htim3.Instance = TIM3;
+	htim3.Init.Prescaler = 0;
+	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim3.Init.Period = 256 - 1;
+	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim3.Init.RepetitionCounter = 0;
+	htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+	if (HAL_TIM_Base_Init(&htim1) != HAL_OK) {
+		Error_Handler();
+	}
+	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+	if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_TIM_PWM_Init(&htim3) != HAL_OK) {
+		Error_Handler();
+	}
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse = 0;
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+	if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+	sBreakDeadTimeConfig.DeadTime = 0;
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+	sBreakDeadTimeConfig.BreakFilter = 0;
+	sBreakDeadTimeConfig.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
+	sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
+	sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+	sBreakDeadTimeConfig.Break2Filter = 0;
+	sBreakDeadTimeConfig.Break2AFMode = TIM_BREAK_AFMODE_INPUT;
+	sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+	if (HAL_TIMEx_ConfigBreakDeadTime(&htim3, &sBreakDeadTimeConfig)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN TIM1_Init 2 */
+
+	/* USER CODE END TIM1_Init 2 */
+	HAL_TIM_MspPostInit(&htim3);
 
 }
 
