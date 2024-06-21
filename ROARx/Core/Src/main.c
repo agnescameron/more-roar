@@ -276,8 +276,8 @@ int main(void) {
 
 
 	    uint32_t ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0]); //1300 and 2700
-		uint32_t sine_lookup = sine[phase] + sine[((int)((float)phase*map_zero_1(AD_RES[0] >> 3)))%NS];
-		uint32_t ad0_bitshift = AD_RES[0]>>3;
+		uint32_t sine_lookup = sine[phase] + sine[((int)((float)phase*map_zero_1(AD_RES[1] >> 3)))%NS];
+		uint32_t ad0_bitshift = AD_RES[0]>>4;
 
 		uint32_t freq = ad0_bitshift + (sine_lookup)*2;
 		if (freq <= 0) freq = 1;
