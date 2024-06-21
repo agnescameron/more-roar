@@ -194,10 +194,10 @@ int main(void) {
 		return int_log;
 	}
 
-	uint32_t map_counter_scale(uint32_t num) {
+	uint32_t map_counter_scale(uint32_t num, uint32_t divisor) {
 		num = num - 1300;
 		if(num < 0) num = 0;
-		float num_div = (float)num / 100.0; // get a number between 1 and 20
+		float num_div = (float)num / (divisor >> 5); // get a number between 1 and 20
 		return (uint32_t)num_div;
 	}
 
@@ -267,7 +267,7 @@ int main(void) {
 	    }
 
 
-	    uint32_t ctr_scale = map_counter_scale(AD_RES[1]); //1300 and 2700
+	    uint32_t ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0]); //1300 and 2700
 		uint32_t sine_lookup = saw_xmax[phase];
 		uint32_t ad0_bitshift = AD_RES[0]>>3;
 
