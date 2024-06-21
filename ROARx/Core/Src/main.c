@@ -194,11 +194,11 @@ int main(void) {
 		return int_log;
 	}
 
-	uint8_t map_counter_scale(uint32_t num) {
+	uint32_t map_counter_scale(uint32_t num) {
 		num = num - 1300;
 		if(num < 0) num = 0;
-		float num_div = (float)num / 100; // get a number between 1 and 20
-		return (uint8_t)num_div;
+		float num_div = (float)num / 100.0; // get a number between 1 and 20
+		return (uint32_t)num_div;
 	}
 
 
@@ -247,9 +247,8 @@ int main(void) {
 	DMA1_Channel3->CMAR = (uint32_t) sine; // SrcAddress
 
 
-	uint8_t ctr = 0;
-	uint8_t ctr2 = 0;
-	uint8_t ctr_scale = 4;
+	uint32_t ctr = 0;
+	uint32_t ctr2 = 0;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -268,10 +267,11 @@ int main(void) {
 
 	    uint32_t ctr_scale = map_counter_scale(AD_RES[1]);
 		uint32_t phase = ctr2; // how does the scaling work?
-		uint32_t sine_lookup = sine[phase];
+		uint32_t sine_lookup = saw_xmax[phase%NS];
 		uint32_t ad0_bitshift = AD_RES[0]>>3;
 
-		uint32_t freq = ad0_bitshift + (sine_lookup-128);
+		uint32_t freq = ad0_bitshift + (sine_lookup-128)*2;
+		if (freq < 0) freq = 0;
 		TIM2 -> ARR = freq;
 
 
