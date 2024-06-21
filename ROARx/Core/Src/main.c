@@ -201,11 +201,12 @@ int main(void) {
 		return (uint32_t)num_div;
 	}
 
-	uint32_t map_zero_1(uint32_t num) {
+	float map_zero_1(uint32_t num) {
 		num = num - 1300;
 		if(num < 0) num = 0;
 		float num_div = (float)num / 1600; // get a number between 1 and 20
-		return (uint32_t)num_div;
+		if (num_div > 1.0) num_div = 1.0;
+		return num_div;
 	}
 
 
@@ -275,7 +276,7 @@ int main(void) {
 
 
 	    uint32_t ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0]); //1300 and 2700
-		uint32_t sine_lookup = sine[phase] + sine[((int)(phase*map_zero_1(AD_RES[1])))%NS];
+		uint32_t sine_lookup = sine[phase] + saw_xmax[((int)((float)phase*map_zero_1(AD_RES[1])))%NS];
 		uint32_t ad0_bitshift = AD_RES[0]>>3;
 
 		uint32_t freq = ad0_bitshift + (sine_lookup)*2;
