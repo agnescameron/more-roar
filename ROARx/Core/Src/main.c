@@ -18,7 +18,7 @@
 #include "stdlib.h"
 #include "math.h"
 #define NS       256 // number of samples in wavetable 0 - 255
-#define MAX_CTR       1 // number of programs
+#define MODES       6 // number of programs
 
 
 /* USER CODE END Includes */
@@ -137,7 +137,7 @@ DMA_HandleTypeDef hdma_tim2_ch1;
 DMA_HandleTypeDef hdma_tim2_ch2;
 
 /* USER CODE BEGIN PV */
-uint8_t ctr = 1;
+uint8_t mode_sel = 1;
 
 /* USER CODE END PV */
 
@@ -159,9 +159,9 @@ static void MX_ADC1_Init(void);
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) {
 
 	//number of programs here!
-	ctr = ctr + 1;
-	if (ctr > MAX_CTR) // if counter reaches n, + 1 more than programs
-		ctr = 1;
+	mode_sel = mode_sel + 1;
+	if (mode_sel > MODES) // if counter reaches n, + 1 more than programs
+		mode_sel = 1;
 }
 
 /* USER CODE END 0 */
@@ -186,7 +186,6 @@ int main(void) {
 			array[i] = (rand() % max) + 1;
 	}
 
-
 	uint32_t take_log(uint32_t num) {
 		double num_log = sqrt(num);
 		num_log = num_log*10;
@@ -194,10 +193,10 @@ int main(void) {
 		return int_log;
 	}
 
-	uint32_t map_counter_scale(uint32_t num, uint32_t divisor) {
-		num = num - 1300;
+	uint32_t map_counter_scale(uint32_t num, uint32_t divisor, uint8_t divisor_bitshift, uint32_t offset) {
+		num = num - offset;
 		if(num < 0) num = 0;
-		float num_div = (float)num / (divisor >> 5); // get a number between 1 and 20
+		float num_div = (float)num / (divisor >> divisor_bitshift); // get a number between 1 and 20
 		return (uint32_t)num_div;
 	}
 
@@ -257,6 +256,10 @@ int main(void) {
 
 	uint32_t ctr = 0;
 	uint32_t phase = 0;
+	uint32_t freq = 1000;
+	uint32_t ctr_scale = 0;
+	uint32_t sine_lookup = 1000;
+	uint32_t ad0_bitshift = 1000;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -274,12 +277,48 @@ int main(void) {
 	        AD_RES[i] = HAL_ADC_GetValue(&hadc1);         // Read The ADC Conversion Result
 	    }
 
+	    if(mode_sel == 1){
+			ctr_scale = map_counter_scale(AD_RES[1], 200, 3, 1500);
+			sine_lookup = sine[phase%56];
+			ad0_bitshift = AD_RES[0]>>3;
+			freq = ad0_bitshift + (sine_lookup)*2;
+	    }
 
-	    uint32_t ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0]); //1300 and 2700
-		uint32_t sine_lookup = sine[phase] + sine[sine[(AD_RES[1] >> 4)%NS]] + sine[sine[(AD_RES[1] >> 3)%NS]] + sine[sine[(AD_RES[0] >> 4)%NS]];
-		uint32_t ad0_bitshift = AD_RES[0]>>4;
+	    else if(mode_sel == 2){ // holy shit this is so good
+			ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0], 5, 1300);
+			sine_lookup = saw_xmax[phase];
+			ad0_bitshift = AD_RES[0]>>4;
+			freq = ad0_bitshift + (sine_lookup)*3;
+	    }
 
-		uint32_t freq = ad0_bitshift + (sine_lookup)*2;
+	    else if(mode_sel == 3){
+			ctr_scale = map_counter_scale(AD_RES[0], AD_RES[1], 2, AD_RES[1] >> 2);
+			sine_lookup = saw_xmax[phase];
+			ad0_bitshift = AD_RES[0]>>3;
+			freq = ad0_bitshift + (sine_lookup);
+	    }
+
+	    else if(mode_sel == 4){
+			ctr_scale = map_counter_scale(AD_RES[1], 1400, 1, 1000);
+			sine_lookup = weierstrass[phase] + weierstrass[((int)((float)phase*map_zero_1(AD_RES[1] >> 3)))%NS];
+			ad0_bitshift = AD_RES[0]>>4;
+			freq = ad0_bitshift + (sine_lookup)*3;
+	    }
+
+	    else if(mode_sel == 5){ // arpeggiator
+		    ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0], 6, 2000);
+			sine_lookup = sine[phase] + sine[((int)((float)phase*map_zero_1(AD_RES[1] >> 3)))%NS];
+			ad0_bitshift = AD_RES[0]>>4;
+			freq = ad0_bitshift + (sine_lookup)*2;
+	    }
+
+	    else if(mode_sel == 6){
+		    ctr_scale = map_counter_scale(AD_RES[1], take_log(AD_RES[0]), 1, 1300);
+			sine_lookup = sine[phase];
+			ad0_bitshift = AD_RES[0]>>3;
+			freq = ad0_bitshift + (sine_lookup)*2;
+	    }
+
 		if (freq <= 0) freq = 1;
 		TIM2 -> ARR = freq;
 
