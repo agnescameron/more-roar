@@ -18,7 +18,7 @@
 #include "stdlib.h"
 #include "math.h"
 #define NS       256 // number of samples in wavetable 0 - 255
-#define MODES       6 // number of programs
+#define MODES       4 // number of programs
 
 
 /* USER CODE END Includes */
@@ -147,7 +147,6 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -175,16 +174,6 @@ int main(void) {
 
 	/* USER CODE BEGIN 1 */
   // Map function
-	uint32_t MAP(uint32_t au32_IN, uint32_t au32_INmin, uint32_t au32_INmax,
-			uint32_t au32_OUTmin, uint32_t au32_OUTmax) {
-		return ((((au32_IN - au32_INmin) * (au32_OUTmax - au32_OUTmin))
-				/ (au32_INmax - au32_INmin)) + au32_OUTmin);
-	}
-	// Noise function
-	void noise_func(uint32_t array[], uint32_t length, int max) {
-		for (int i = 0; i < length; i++)
-			array[i] = (rand() % max) + 1;
-	}
 
 	uint32_t take_log(uint32_t num) {
 		double num_log = sqrt(num);
@@ -232,14 +221,12 @@ int main(void) {
 	MX_DMA_Init();
 	MX_TIM1_Init();
 	MX_TIM2_Init();
-	MX_TIM3_Init();
 	MX_ADC1_Init();
 	/* USER CODE BEGIN 2 */
 
 ////PWM test
 //	TIM1->CCR1 = 128;
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 	HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_2);
 	HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t) sine, DstAddress, NS);
@@ -251,7 +238,6 @@ int main(void) {
 	ADC_CH_Cfg.Rank =  ADC_REGULAR_RANK_1;
 	ADC_CH_Cfg.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 	DMA1_Channel1->CMAR = (uint32_t) sine; // SrcAddress
-	DMA1_Channel3->CMAR = (uint32_t) sine; // SrcAddress
 
 
 	uint32_t ctr = 0;
@@ -305,19 +291,19 @@ int main(void) {
 			freq = ad0_bitshift + (sine_lookup)*3;
 	    }
 
-	    else if(mode_sel == 5){ // arpeggiator
-		    ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0], 6, 2000);
-			sine_lookup = sine[phase] + sine[((int)((float)phase*map_zero_1(AD_RES[1] >> 3)))%NS];
-			ad0_bitshift = AD_RES[0]>>4;
-			freq = ad0_bitshift + (sine_lookup)*2;
-	    }
-
-	    else if(mode_sel == 6){
-		    ctr_scale = map_counter_scale(AD_RES[1], take_log(AD_RES[0]), 1, 1300);
-			sine_lookup = sine[phase];
-			ad0_bitshift = AD_RES[0]>>3;
-			freq = ad0_bitshift + (sine_lookup)*2;
-	    }
+//	    else if(mode_sel == 5){ // arpeggiator
+//		    ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0], 6, 2000);
+//			sine_lookup = sine[phase] + sine[((int)((float)phase*map_zero_1(AD_RES[1] >> 3)))%NS];
+//			ad0_bitshift = AD_RES[0]>>4;
+//			freq = ad0_bitshift + (sine_lookup)*2;
+//	    }
+//
+//	    else if(mode_sel == 6){
+//		    ctr_scale = map_counter_scale(AD_RES[1], AD_RES[0], 1, 1300);
+//			sine_lookup = sine[phase];
+//			ad0_bitshift = AD_RES[0]>>3;
+//			freq = ad0_bitshift + (sine_lookup)*2;
+//	    }
 
 		if (freq <= 0) freq = 1;
 		TIM2 -> ARR = freq;
@@ -519,78 +505,6 @@ static void MX_TIM1_Init(void) {
 
 }
 
-static void MX_TIM3_Init(void) {
-
-	/* USER CODE BEGIN TIM1_Init 0 */
-
-	/* USER CODE END TIM1_Init 0 */
-
-	TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
-	TIM_MasterConfigTypeDef sMasterConfig = { 0 };
-	TIM_OC_InitTypeDef sConfigOC = { 0 };
-	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = { 0 };
-
-	/* USER CODE BEGIN TIM1_Init 1 */
-
-	/* USER CODE END TIM1_Init 1 */
-	htim3.Instance = TIM3;
-	htim3.Init.Prescaler = 0;
-	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim3.Init.Period = 256 - 1;
-	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	htim3.Init.RepetitionCounter = 0;
-	htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-	if (HAL_TIM_Base_Init(&htim1) != HAL_OK) {
-		Error_Handler();
-	}
-	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-	if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK) {
-		Error_Handler();
-	}
-	if (HAL_TIM_PWM_Init(&htim3) != HAL_OK) {
-		Error_Handler();
-	}
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-	sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = 0;
-	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-	sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-	if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-	sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-	sBreakDeadTimeConfig.DeadTime = 0;
-	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-	sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-	sBreakDeadTimeConfig.BreakFilter = 0;
-	sBreakDeadTimeConfig.BreakAFMode = TIM_BREAK_AFMODE_INPUT;
-	sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-	sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-	sBreakDeadTimeConfig.Break2Filter = 0;
-	sBreakDeadTimeConfig.Break2AFMode = TIM_BREAK_AFMODE_INPUT;
-	sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-	if (HAL_TIMEx_ConfigBreakDeadTime(&htim3, &sBreakDeadTimeConfig)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-	/* USER CODE BEGIN TIM1_Init 2 */
-
-	/* USER CODE END TIM1_Init 2 */
-	HAL_TIM_MspPostInit(&htim3);
-
-}
 
 /**
  * @brief TIM2 Initialization Function
