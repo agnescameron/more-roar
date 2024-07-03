@@ -264,8 +264,9 @@ int main(void) {
 	    }
 
 	    if(mode_sel == 1){
-			ctr_scale = map_counter_scale(AD_RES[1], 200, 3, 1500);
-			sine_lookup = sine[phase%56];
+			// ctr_scale = map_counter_scale(AD_RES[1], 200, 3, 1500);
+			ctr_scale = 1;
+			sine_lookup = sine[phase];
 			ad0_bitshift = AD_RES[0]>>3;
 			freq = ad0_bitshift + (sine_lookup)*2;
 	    }
@@ -310,7 +311,7 @@ int main(void) {
 
 		ctr += 1;
 		if(ctr%ctr_scale == 0){
-			phase +=1;
+			phase +=20;
 		}
 
 		phase = phase%NS;
